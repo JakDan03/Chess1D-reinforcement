@@ -93,8 +93,8 @@ def under_attack(board, number_opp, king_find=True, knight_find=True, rook_find=
     return attacked_places
 
 
-# what choices bot has?
-def bot_choices(board, number, check=False):
+# what choices the player has?
+def poss_choices(board, number, check=False):
     choices = []
 
     # white pieces
@@ -214,11 +214,11 @@ def board_print(board):
     print(l)
     print("-" * (40 - board.count(" ")))
 
-# initializing choices_ai
+# initializing choices_ai dictionary
 def initialize(cond=()):
     choices_ai = {}
     choices_points = {}
-    for x in bot_choices(["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"], 1):
+    for x in poss_choices(["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"], 1):
         hyp_board = ["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"]
         hyp_board[hyp_board.index(x[0])] = " "
         hyp_board[x[1]] = x[0]
@@ -228,7 +228,7 @@ def initialize(cond=()):
 
 choices_ai = initialize()
 
-# verifying whether the next board is after white's move or not
+# verifying whether the next board state is after white's move or not
 def white_move(board_curr, board_next):
     for piece in ["♔", "♘", "♖"]:
         if piece in board_next:
@@ -236,8 +236,8 @@ def white_move(board_curr, board_next):
     return False
 
 
-# chess 1d gameplay - random vs random
-def chess1d_random(inform=True, res_inform=True, random=False, player=False):
+# chess 1d gameplay
+def chess1d_gameplay(inform=True, res_inform=True, random=False, player=False):
     # starting board
     board_play = ["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"]
     if inform: board_print(board_play)
@@ -254,7 +254,7 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
         if inform and check: print("Check!")
 
         # stalemate - player has no moves and there is no check
-        if bot_choices(board_play, moving_player) == [] and not check:
+        if poss_choices(board_play, moving_player) == [] and not check:
             if res_inform: print("Stalemate!")
             if inform: print("White has no moves") if moving_player == 1 else print("Black has no moves")
 
@@ -287,7 +287,7 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
         if inform: print("White moves") if moving_player == 1 else print("Black moves")
 
         # possible choices
-        choices_list = bot_choices(board_play, moving_player, check=check)
+        choices_list = poss_choices(board_play, moving_player, check=check)
 
         # taking a move from the random player or real player (black)
         if moving_player == 2 or random:
@@ -311,7 +311,7 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
 
                 # combine move and place and find if the move is legal and if it is not - inform that it is not
                 move_and_place = (piece, place)
-                if move_and_place not in bot_choices(board_play, moving_player, check=check):
+                if move_and_place not in poss_choices(board_play, moving_player, check=check):
                     print("This move is unavailable for you!")
                     board_print(board_play)
                     continue
@@ -343,13 +343,8 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
                 for choice in all_moves:
                     if white_move(tuple(board_play), choice): white_moves[choice] = all_moves[choice]
                 try:
-                    best_value = max(white_moves.values())  # <-- tutaj mamy błąd
+                    best_value = max(white_moves.values())
                 except:
-                    if inform:
-                        print(moving_player)
-                        print(board_play)
-                        print(all_moves)
-                        print(white_moves)
                     return "errors"
 
                 # find all moves with the best possible value and choose one
@@ -366,7 +361,7 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
                         hyp_check = True
                     else:
                         hyp_check = check
-                    potential_choices = bot_choices(list(best_board), 1 + i % 2, check=hyp_check)
+                    potential_choices = poss_choices(list(best_board), 1 + i % 2, check=hyp_check)
 
                     # if there is no next move for any player, then it has to be a win () or a draw
                     if potential_choices == []:
@@ -383,8 +378,6 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
                             choices_points[tuple(hyp_board[:])] = beta
                 choices_ai[tuple(best_board)] = choices_points
 
-            # pprint(choices_ai)
-
             # find the best value in the next move
             all_moves = choices_ai[tuple(best_board)]
             white_or_black_moves = {}
@@ -392,13 +385,8 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
                 if choice in ["tie", "win/lose"] or white_move(tuple(best_board), choice) != (moving_player == 1):
                     white_or_black_moves[choice] = all_moves[choice]
             try:
-                next_best_value = max(white_or_black_moves.values())  # <-- tutaj jest błąd
+                next_best_value = max(white_or_black_moves.values())
             except:
-                if inform:
-                    print(moving_player)
-                    print(board_play)
-                    print(all_moves)
-                    print(white_or_black_moves)
                 return "errors"
 
             # assign a value to the chosen move using the Bellman's formula
@@ -416,7 +404,7 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
             check = True
 
             # checkmate
-            if bot_choices(board_play, 1 + moving_player % 2, check=check) == []:
+            if poss_choices(board_play, 1 + moving_player % 2, check=check) == []:
                 if inform: print("Checkmate!")
                 if res_inform:
                     print("White wins!") if moving_player == 1 else print("Black wins!")
@@ -430,23 +418,23 @@ def chess1d_random(inform=True, res_inform=True, random=False, player=False):
 # random simulation
 res_count = {"white": 0, "black": 0, "tie": 0, "errors": 0}
 for i in range(num_of_games_random):
-    result = chess1d_random(inform=False, res_inform = False, random = True)
+    result = chess1d_gameplay(inform=False, res_inform = False, random = True)
     res_count[result] += 1
 print("Random simulation: " + str(res_count))
-print("Winrate: " + str(round(res_count["white"]/num_of_games_random, 2)*100) + "%")
+print("Winrate: " + str(round(res_count["white"]/num_of_games_random, 4)*100) + "%")
 print("")
 
 # simulation for every first move possible and select what gives you the best output
 choices_ai_copies = {}
 
 # for every first move possible, create choices_ai dictionary
-for first_move in bot_choices(["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"], 1):
+for first_move in poss_choices(["♔", "♘", "♖", " ", " ", "♜", "♞", "♚"], 1):
     choices_ai = initialize(first_move)
 
     # simulation
     res_count = {"white": 0, "black": 0, "tie": 0, "errors": 0}
     for i in range(num_of_games_first):
-        result = chess1d_random(inform=False, res_inform=False)
+        result = chess1d_gameplay(inform=False, res_inform=False)
         res_count[result] += 1
 
     # save the move with its winrate
@@ -470,7 +458,7 @@ for j in range(num_of_simulations):
     # single simulation
     res_count = {"white": 0, "black": 0, "tie": 0, "errors": 0}
     for i in range(num_of_games_next):
-        result = chess1d_random(inform=False, res_inform=False)
+        result = chess1d_gameplay(inform=False, res_inform=False)
         res_count[result] += 1
     print("Simulation " + str(j + 1) + ": " + str(res_count))
     final_res[j] = res_count["white"] / num_of_games_next * 100  # percentage
@@ -491,11 +479,11 @@ while ans not in ["yes", "no"]:
 
 if ans == "yes":
     choices_ai = best_dict
-    chess1d_random(inform=True, res_inform=True, player=True)
+    chess1d_gameplay(inform=True, res_inform=True, player=True)
 
 while ans != "no":
     print("Wanna play more?")
     ans = ""
     while ans not in ["yes", "no"]:
         ans = str(input()).lower()
-    if ans == "yes": chess1d_random(inform=True, res_inform=True, player=True)
+    if ans == "yes": chess1d_gameplay(inform=True, res_inform=True, player=True)
